@@ -7,27 +7,15 @@
 #    https://shiny.posit.co/
 #
 
-library(shiny)
-
-# Define UI for application that draws a histogram
 fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
-        )
-    )
+  
+  shinyFeedback::useShinyFeedback(),
+  shinyjs::useShinyjs(),
+  
+  # Application Title
+  titlePanel(
+    h1("Shiny CRUD Application", align = 'center'),
+    windowTitle = "Shiny CRUD Application"
+  ),
+  cars_table_module_ui("cars_table")
 )
