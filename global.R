@@ -2,7 +2,7 @@
 library(shiny)
 library(DT)
 library(DBI)
-library(RSQLite)
+library(duckdb)
 library(shinyjs)
 library(shinycssloaders)
 library(lubridate)
