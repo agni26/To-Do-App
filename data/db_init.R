@@ -1,61 +1,48 @@
-library(RSQLite)
+library(duckdb)
 library(tibble)
 
-# Create a connection object with SQLite
-conn <- dbConnect(
-  RSQLite::SQLite(),
-  "data/todo.sqlite3"
-)
+con <- dbConnect(duckdb(), "data/todo.duckdb")
 
-# Create a query to prepare the 'mtcars' table with additional 'uid', 'id',
-# & the 4 created/modified columns
-create_todo_query = "CREATE TABLE todo (
-  uid                             TEXT PRIMARY KEY,
-  model                           TEXT,
-  mpg                             REAL,
-  cyl                             REAL,
-  disp                            REAL,
-  hp                              REAL,
-  drat                            REAL,
-  wt                              REAL,
-  qsec                            REAL,
-  vs                              TEXT,
-  am                              TEXT,
-  gear                            REAL,
-  carb                            REAL,
-  created_at                      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by                      TEXT,
-  modified_at                     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  modified_by                     TEXT
+create_query = "CREATE TABLE todo (
+  uid                             VARCHAR PRIMARY KEY,
+  task                            VARCHAR,
+  status                          BOOLEAN,
+  created_at                      DATETIME,
+  created_by                      VARCHAR,
+  modified_at                     DATETIME,
+  modified_by                     VARCHAR
 )"
 
-# dbExecute() executes a SQL statement with a connection object
 # Drop the table if it already exists
-dbExecute(conn, "DROP TABLE IF EXISTS mtcars")
+dbExecute(con, "DROP TABLE IF EXISTS todo")
+
 # Execute the query created above
-dbExecute(conn, create_mtcars_query)
+dbExecute(con, create_query)
 
-# Read in the RDS file created in 'data_prep.R'
-dat <- readRDS("01_traditional/data_prep/prepped/mtcars.RDS")
+# retrieve the items again
+dat <- dbGetQuery(con, "SELECT * FROM todo")
 
-# add uid column to the `dat` data frame
+# # insert two items into the table
+# dbExecute(con, "INSERT INTO todo VALUES 
+#           ('001', 'Attend meeting at 4', FALSE), 
+#           ('002', 'Go for Grocery shopping', FALSE)")
+
 dat$uid <- uuid::UUIDgenerate(n = nrow(dat))
 
 # reorder the columns
-dat <- dat %>%
+dat <- dat |> 
   select(uid, everything())
 
-# Fill in the SQLite table with the values from the RDS file
 DBI::dbWriteTable(
-  conn,
-  name = "mtcars",
+  con,
+  name = "todo",
   value = dat,
   overwrite = FALSE,
   append = TRUE
 )
 
-# List tables to confirm 'mtcars' table exists
-dbListTables(conn)
+# List tables to confirm 'todo' table exists
+dbListTables(con)
 
-# disconnect from SQLite before continuing
-dbDisconnect(conn)
+# disconnect from duckdb before continuing
+dbDisconnect(con, shutdown=TRUE)

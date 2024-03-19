@@ -10,7 +10,7 @@
 #'
 #' @return a \code{shiny::\link[shiny]{tagList}} containing UI elements
 #'
-cars_table_module_ui <- function(id) {
+todo_table_module_ui <- function(id) {
   ns <- NS(id)
   
   tagList(
@@ -18,7 +18,7 @@ cars_table_module_ui <- function(id) {
       column(
         width = 2,
         actionButton(
-          ns("add_car"),
+          ns("add_task"),
           "Add",
           class = "btn-success",
           style = "color: #fff;",
@@ -32,15 +32,15 @@ cars_table_module_ui <- function(id) {
     fluidRow(
       column(
         width = 12,
-        title = "Motor Trend Car Road Tests",
-        DTOutput(ns('car_table')) %>%
+        title = "To Do List",
+        DTOutput(ns('todo_table')) |> 
           withSpinner(),
         tags$br(),
         tags$br()
       )
     ),
-    tags$script(src = "cars_table_module.js"),
-    tags$script(paste0("cars_table_module_js('", ns(''), "')"))
+    tags$script(src = "todo_table_module.js"),
+    tags$script(paste0("todo_table_module_js('", ns(''), "')"))
   )
 }
 
@@ -58,24 +58,24 @@ cars_table_module_ui <- function(id) {
 #'
 #' @return None
 
-cars_table_module <- function(input, output, session) {
+todo_table_module <- function(input, output, session) {
   
-  # trigegr to reload data from the "mtcars" table
-  session$userData$mtcars_trigger <- reactiveVal(0)
+  # trigger to reload data from the "todo" table
+  session$userData$todo_trigger <- reactiveVal(0)
   
-  # Read in "mtcars" table from the database
-  cars <- reactive({
-    session$userData$mtcars_trigger()
+  # Read in "todo" table from the database
+  todo <- reactive({
+    session$userData$todo_trigger()
     
     out <- NULL
     tryCatch({
-      out <- conn %>%
-        tbl('mtcars') %>%
-        collect() %>%
+      out <- conn |> 
+        tbl('todo') |> 
+        collect() |> 
         mutate(
           created_at = as.POSIXct(created_at, tz = "UTC"),
           modified_at = as.POSIXct(modified_at, tz = "UTC")
-        ) %>%
+        ) |> 
         arrange(desc(modified_at))
     }, error = function(err) {
       
@@ -94,10 +94,10 @@ cars_table_module <- function(input, output, session) {
   })
   
   
-  car_table_prep <- reactiveVal(NULL)
+  todo_table_prep <- reactiveVal(NULL)
   
-  observeEvent(cars(), {
-    out <- cars()
+  observeEvent(todo(), {
+    out <- todo()
     
     ids <- out$uid
     
@@ -111,39 +111,37 @@ cars_table_module <- function(input, output, session) {
     })
     
     # Remove the `uid` column. We don't want to show this column to the user
-    out <- out %>%
+    out <- out |> 
       select(-uid)
     
-    # Set the Action Buttons row to the first column of the `mtcars` table
+    # Set the Action Buttons row to the first column of the `todo` table
     out <- cbind(
       tibble(" " = actions),
       out
     )
     
-    if (is.null(car_table_prep())) {
+    if (is.null(todo_table_prep())) {
       # loading data into the table for the first time, so we render the entire table
       # rather than using a DT proxy
-      car_table_prep(out)
+      todo_table_prep(out)
       
     } else {
       
       # table has already rendered, so use DT proxy to update the data in the
       # table without rerendering the entire table
-      replaceData(car_table_proxy, out, resetPaging = FALSE, rownames = FALSE)
+      replaceData(todo_table_proxy, out, resetPaging = FALSE, rownames = FALSE)
       
     }
   })
   
-  output$car_table <- renderDT({
-    req(car_table_prep())
-    out <- car_table_prep()
+  output$todo_table <- renderDT({
+    req(todo_table_prep())
+    out <- todo_table_prep()
     
     datatable(
       out,
       rownames = FALSE,
-      colnames = c('Model', 'Miles/Gallon', 'Cylinders', 'Displacement (cu.in.)',
-                   'Horsepower', 'Rear Axle Ratio', 'Weight (lbs)', '1/4 Mile Time',
-                   'Engine', 'Transmission', 'Forward Gears', 'Carburetors', 'Created At',
+      colnames = c('Task', 'Created At',
                    'Created By', 'Modified At', 'Modified By'),
       selection = "none",
       class = "compact stripe row-border nowrap",
@@ -157,7 +155,7 @@ cars_table_module <- function(input, output, session) {
           list(
             extend = "excel",
             text = "Download",
-            title = paste0("mtcars-", Sys.Date()),
+            title = paste0("todo-", Sys.Date()),
             exportOptions = list(
               columns = 1:(length(out) - 1)
             )
@@ -171,7 +169,7 @@ cars_table_module <- function(input, output, session) {
           $('.tooltip').remove()
         }")
       )
-    ) %>%
+    ) |> 
       formatDate(
         columns = c("created_at", "modified_at"),
         method = 'toLocaleString'
@@ -179,43 +177,43 @@ cars_table_module <- function(input, output, session) {
     
   })
   
-  car_table_proxy <- DT::dataTableProxy('car_table')
+  todo_table_proxy <- DT::dataTableProxy('todo_table')
   
   callModule(
-    car_edit_module,
-    "add_car",
-    modal_title = "Add Car",
-    car_to_edit = function() NULL,
-    modal_trigger = reactive({input$add_car})
+    todo_edit_module,
+    "add_task",
+    modal_title = "Add Task",
+    task_to_edit = function() NULL,
+    modal_trigger = reactive({input$add_task})
   )
   
-  car_to_edit <- eventReactive(input$car_id_to_edit, {
+  task_to_edit <- eventReactive(input$task_id_to_edit, {
     
-    cars() %>%
-      filter(uid == input$car_id_to_edit)
+    todo() |> 
+      filter(uid == input$task_id_to_edit)
   })
   
   callModule(
-    car_edit_module,
-    "edit_car",
-    modal_title = "Edit Car",
-    car_to_edit = car_to_edit,
-    modal_trigger = reactive({input$car_id_to_edit})
+    todo_edit_module,
+    "edit_task",
+    modal_title = "Edit Task",
+    task_to_edit = task_to_edit,
+    modal_trigger = reactive({input$task_id_to_edit})
   )
   
-  car_to_delete <- eventReactive(input$car_id_to_delete, {
+  task_to_delete <- eventReactive(input$task_id_to_delete, {
     
-    cars() %>%
-      filter(uid == input$car_id_to_delete) %>%
+    todo() |> 
+      filter(uid == input$task_id_to_delete) |> 
       as.list()
   })
   
   callModule(
-    car_delete_module,
-    "delete_car",
-    modal_title = "Delete Car",
-    car_to_delete = car_to_delete,
-    modal_trigger = reactive({input$car_id_to_delete})
+    todo_delete_module,
+    "delete_task",
+    modal_title = "Delete Task",
+    task_to_delete = task_to_delete,
+    modal_trigger = reactive({input$task_id_to_delete})
   )
   
 }
