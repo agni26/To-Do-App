@@ -13,14 +13,14 @@ library(dbplyr)
 db_config <- config::get()$db
 
 # Create database connection
-conn <- dbConnect(
-  RSQLite::SQLite(),
+con <- dbConnect(
+  duckdb(),
   dbname = db_config$dbname
 )
 
 # Stop database connection when application stops
 shiny::onStop(function() {
-  dbDisconnect(conn)
+  dbDisconnect(con)
 })
 
 # Turn off scientific notation

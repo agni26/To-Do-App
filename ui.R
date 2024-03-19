@@ -14,8 +14,8 @@ fluidPage(
   
   # Application Title
   titlePanel(
-    h1("Shiny CRUD Application", align = 'center'),
-    windowTitle = "Shiny CRUD Application"
+    h1("To-Do Application", align = 'center'),
+    windowTitle = "To-Do App"
   ),
-  cars_table_module_ui("cars_table")
+  todo_table_module_ui("cars_table")
 )
