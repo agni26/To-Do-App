@@ -46,3 +46,4 @@ dbListTables(con)
 
 # disconnect from duckdb before continuing
 dbDisconnect(con, shutdown=TRUE)
+

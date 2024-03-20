@@ -15,7 +15,7 @@ fluidPage(
   # Application Title
   titlePanel(
     h1("To-Do Application", align = 'center'),
-    windowTitle = "To-Do App"
+    windowTitle = "To-Do-App"
   ),
-  todo_table_module_ui("cars_table")
+  todo_table_module_ui("todo_table")
 )

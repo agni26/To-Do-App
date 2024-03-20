@@ -1,4 +1,4 @@
 default:
-  app_name: "crud_traditional"
+  app_name: "To-Do-App"
   db:
     dbname: 'data/todo.duckdb'
