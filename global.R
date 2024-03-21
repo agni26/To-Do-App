@@ -20,7 +20,7 @@ con <- dbConnect(
 
 # Stop database connection when application stops
 shiny::onStop(function() {
-  dbDisconnect(con)
+  dbDisconnect(con, shutdown=TRUE)
 })
 
 # Turn off scientific notation
