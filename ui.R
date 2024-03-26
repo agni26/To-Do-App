@@ -1,21 +1,11 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
-
 fluidPage(
-  
-  shinyFeedback::useShinyFeedback(),
-  shinyjs::useShinyjs(),
-  
-  # Application Title
-  titlePanel(
-    h1("To-Do Application", align = 'center'),
-    windowTitle = "To-Do-App"
-  ),
-  todo_table_module_ui("todo_table")
+  column(3, 
+    textInput("title", "Add a task Title!"),
+    textInput("detail", "Add task Details"),
+    selectInput("category", "Select task category", choices = c("daily", "weekly", "monthly", "immediate")),
+    actionButton("add", "Add Task!")
+  ), 
+  column(9, 
+    tableOutput("show")
+  )
 )
