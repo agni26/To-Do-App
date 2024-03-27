@@ -42,11 +42,29 @@ todo_server <- function(id){
                      title = input$title,
                      detail = input$detail,
                      status = FALSE
-      )})
+      )
+    })
     
     output$show <- renderTable({
       dataframe()
     })
+    
+    # observeEvent(input$add, {
+    #   
+    #   con <- dbConnect(duckdb(), "data/todo.duckdb")
+    #   
+    #   
+    #   
+    #   DBI::dbWriteTable(
+    #     con,
+    #     name = "todo",
+    #     value = dat,
+    #     overwrite = TRUE,
+    #     append = TRUE
+    #   )
+    #   
+    #   dbDisconnect(con, shutdown=TRUE)
+    # })
     
   })
 }
