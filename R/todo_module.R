@@ -7,7 +7,7 @@ todo_ui <- function(id){
              "Add a task Title!"
            ),
            
-           textInput(
+           textAreaInput(
              NS(id, "detail"), 
              "Add task Details"
            ),
@@ -15,19 +15,16 @@ todo_ui <- function(id){
            selectInput(
              NS(id, "category"), 
              "Select task category", 
-             choices = c("daily", "weekly", "monthly", "once")
+             choices = c("Once", "Daily", "Weekly", "Monthly")
            ),
            
            actionButton(
              NS(id, "add"), 
-             "Add Task!"
+             "Add Task"
            )
     ), 
     
-    column(9, 
-           tableOutput(
-             NS(id, "show")
-           )
+    column(9, DTOutput(NS(id, "show"))
     )
   )
 }
@@ -37,34 +34,30 @@ todo_server <- function(id){
   
   moduleServer(id, function(input, output, session) {
     
-    dataframe <- eventReactive(input$add ,{
-      dat |> add_row(uid = "1",
-                     title = input$title,
-                     detail = input$detail,
-                     status = FALSE
-      )
+    tasks <- eventReactive(input$add ,{
+      
+      # insert two items into the table
+      dbExecute(con, 
+                "INSERT INTO todo VALUES (?, ?, ?, ?)", 
+                list(
+                  uuid::UUIDgenerate(TRUE), 
+                  input$title, 
+                  input$detail,
+                  input$category, 
+                  FALSE))
+      
+      dat <- con |> 
+        tbl("todo") |> 
+        select(Type = category,
+               Task = title,
+               Details = detail) |> 
+        collect()
+        
     })
     
-    output$show <- renderTable({
-      dataframe()
+    output$show <- renderDT({
+      tasks()
     })
-    
-    # observeEvent(input$add, {
-    #   
-    #   con <- dbConnect(duckdb(), "data/todo.duckdb")
-    #   
-    #   
-    #   
-    #   DBI::dbWriteTable(
-    #     con,
-    #     name = "todo",
-    #     value = dat,
-    #     overwrite = TRUE,
-    #     append = TRUE
-    #   )
-    #   
-    #   dbDisconnect(con, shutdown=TRUE)
-    # })
     
   })
 }

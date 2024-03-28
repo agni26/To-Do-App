@@ -12,8 +12,10 @@ db_config <- config::get()$db
 # Create database connection
 con <- dbConnect(
   duckdb(),
-  dbname = db_config$dbname
+  db_config$dbname
 )
+
+dat <- dbGetQuery(con, "SELECT * FROM todo")
 
 # Stop database connection when application stops
 shiny::onStop(function() {

@@ -10,21 +10,19 @@ create_query = "CREATE TABLE todo (
   uid                             VARCHAR PRIMARY KEY,
   title                           VARCHAR,
   detail                          VARCHAR,
+  category                        VARCHAR,
   status                          BOOLEAN,
 )"
 
 # Execute the query created above
 dbExecute(con, create_query)
 
-# # insert two items into the table
-# dbExecute(con, "INSERT INTO todo VALUES
-#           ('001', 'Attend meeting at 4', FALSE, NULL, NULL, NULL, NULL),
-#           ('002', 'Go for Grocery shopping', FALSE, NULL, NULL, NULL, NULL)")
+dbExecute(con, "DELETE From todo")
 
 # retrieve the items again
 dat <- dbGetQuery(con, "SELECT * FROM todo")
 
-dat$uid <- uuid::UUIDgenerate(n = nrow(dat))
+# dat$uid <- uuid::UUIDgenerate(n = nrow(dat))
 
 DBI::dbWriteTable(
   con,
@@ -39,4 +37,3 @@ dbListTables(con)
 
 # disconnect from duckdb before continuing
 dbDisconnect(con, shutdown=TRUE)
-
