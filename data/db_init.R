@@ -17,12 +17,11 @@ create_query = "CREATE TABLE todo (
 # Execute the query created above
 dbExecute(con, create_query)
 
-dbExecute(con, "DELETE From todo")
+# Execute to delete all entries
+# dbExecute(con, "DELETE From todo")
 
 # retrieve the items again
 dat <- dbGetQuery(con, "SELECT * FROM todo")
-
-# dat$uid <- uuid::UUIDgenerate(n = nrow(dat))
 
 DBI::dbWriteTable(
   con,

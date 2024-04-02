@@ -34,11 +34,13 @@ todo_server <- function(id){
   
   moduleServer(id, function(input, output, session) {
     
-    tasks <- eventReactive(input$add ,{
+    
+    # Function to update table with new row
+    observeEvent(input$add, {
       
-      # insert two items into the table
+      # Insert new row into the database
       dbExecute(con, 
-                "INSERT INTO todo VALUES (?, ?, ?, ?)", 
+                "INSERT INTO todo VALUES (?, ?, ?, ?, ?)", 
                 list(
                   uuid::UUIDgenerate(TRUE), 
                   input$title, 
@@ -46,18 +48,40 @@ todo_server <- function(id){
                   input$category, 
                   FALSE))
       
-      dat <- con |> 
-        tbl("todo") |> 
-        select(Type = category,
-               Task = title,
-               Details = detail) |> 
-        collect()
+      # Update the table data
+      output$show <- renderDataTable({
+        dat <- con |> 
+          tbl("todo") |> 
+          collect()
         
+        dat <- transform(
+          dat, 
+          Edit = paste0("<button id='edit_", dat$uid, "'>Edit</button>")
+        )
+        
+        dat |> select(Type = category,
+                      Task = title,
+                      Details = detail,
+                      Edit)
+      }, escape = FALSE)
     })
     
-    output$show <- renderDT({
-      tasks()
-    })
+    # Render the initial table
+    output$show <- renderDataTable({
+      dat <- con |> 
+        tbl("todo") |> 
+        collect()
+      
+      dat <- transform(
+        dat, 
+        Edit = paste0("<button id='edit_", dat$uid, "'>Edit</button>")
+      )
+      
+      dat |> select(Type = category,
+                    Task = title,
+                    Details = detail,
+                    Edit)
+    }, escape = FALSE)
     
   })
 }
