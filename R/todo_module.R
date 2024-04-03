@@ -49,39 +49,105 @@ todo_server <- function(id){
                   FALSE))
       
       # Update the table data
-      output$show <- renderDataTable({
+      output$show <- renderDT({
         dat <- con |> 
           tbl("todo") |> 
           collect()
         
         dat <- transform(
-          dat, 
-          Edit = paste0("<button id='edit_", dat$uid, "'>Edit</button>")
+          dat,
+          Status = paste0("<input type='radio name='radio_", dat$uid, "' value='", dat$status, "'/>"),
+          Delete = paste0("<button id='del_", dat$uid, "'><i class='fa-solid fa-trash'></i></button>")
         )
         
-        dat |> select(Type = category,
-                      Task = title,
-                      Details = detail,
-                      Edit)
-      }, escape = FALSE)
+        datatable(dat |> 
+                    select(Status,
+                           Task = title,
+                           Details = detail,
+                           Type = category,
+                           Delete), 
+                  options = list(dom = 't'), 
+                  editable = TRUE, 
+                  rownames = FALSE,
+                  escape = FALSE,
+                  selection = 'none')
+        
+      })
     })
     
     # Render the initial table
-    output$show <- renderDataTable({
+    output$show <- renderDT({
+      
       dat <- con |> 
         tbl("todo") |> 
         collect()
       
       dat <- transform(
-        dat, 
-        Edit = paste0("<button id='edit_", dat$uid, "'>Edit</button>")
+        dat,
+        Status = paste0("<input type='radio name='radio_", dat$uid, "' value='", dat$status, "'/>"),
+        Delete = paste0("<button id='del_", dat$uid, "'><i class='fa-solid fa-trash'></i></button>")
       )
       
-      dat |> select(Type = category,
-                    Task = title,
-                    Details = detail,
-                    Edit)
-    }, escape = FALSE)
+      datatable(dat |> 
+                  select(Status,
+                         Task = title,
+                         Details = detail,
+                         Type = category,
+                         Delete), 
+                options = list(dom = 't'), 
+                editable = TRUE, 
+                rownames = FALSE,
+                escape = FALSE,
+                selection = 'none')
+      
+    })
+    
+    observeEvent(input$show_cell_edit, {
+      
+      dat <- con |> 
+        tbl("todo") |> 
+        collect()
+      
+      row  <- input$show_cell_edit$row
+      clmn <- input$show_cell_edit$col + 1
+      val  <- input$show_cell_edit$value
+      
+      dat[row, clmn] <- val
+      
+      dbWriteTable(
+        con,
+        name = "todo",
+        value = dat,
+        overwrite = TRUE,
+        append = FALSE
+      )
+      
+      output$show <- renderDT({
+        
+        dat <- con |> 
+          tbl("todo") |> 
+          collect()
+        
+        dat <- transform(
+          dat,
+          Status = paste0("<input type='radio name='radio_", dat$uid, "' value='", dat$status, "'/>"),
+          Delete = paste0("<button id='del_", dat$uid, "'><i class='fa-solid fa-trash'></i></button>")
+        )
+        
+        datatable(dat |> 
+                    select(Status,
+                           Task = title,
+                           Details = detail,
+                           Type = category,
+                           Delete), 
+                  options = list(dom = 't'), 
+                  editable = TRUE, 
+                  rownames = FALSE,
+                  escape = FALSE,
+                  selection = 'none')
+        
+      })
+    })
     
   })
 }
