@@ -169,12 +169,6 @@ todo_server <- function(id){
       })
     })
     
-    get_id <- function(id){
-      output$msg <- renderText({
-        print(paste0("pressed:", input$current_id))
-      })
-    }
-    
     observeEvent(input$show_cell_edit, {
       
       dat <- con |> 
@@ -244,13 +238,84 @@ todo_server <- function(id){
     })
     
     observeEvent(input$current_id, {
-      output$msg <- renderText({
-        paste0("pressed:", input$current_id)
+      
+      id <- unlist(strsplit(input$current_id, "_"))
+      id2 <- id[2]
+      
+      original_status <- as.logical(
+        con |> 
+          tbl("todo") |> 
+          filter(uid == id2) |>
+          select(status) |>
+          collect()
+      )
+      
+      new_status = !original_status
+      
+      if(id[1] == "stat"){
+        
+        dbExecute(con,
+                  "UPDATE todo SET status = ? WHERE uid = ?",
+                  list(
+                    !original_status,
+                    id2
+                  ))
+      }
+      
+      if(id[1] == "del"){
+        
+        dbExecute(con,
+                  "DELETE FROM todo WHERE uid = ?",
+                  id2
+                  )
+      }
+      
+      output$show <- renderDT({
+        
+        dat <- con |> 
+          tbl("todo") |> 
+          collect()
+        
+        dat <- dat |> 
+          mutate(
+            Status = case_when(status == FALSE ~ 
+                                 paste0("<button class='btn btn-success' 
+                                        id='stat_", uid, "' 
+                                        onclick='get_id(this.id)'> Done ",
+                                        icon("check"),"</button>"),
+                               status == TRUE ~ 
+                                 paste0("<button class='btn btn-outline-warning' 
+                                        id='stat_", uid, "' 
+                                        onclick='get_id(this.id)'> Redo",
+                                        icon("rotate"),"</button>")),
+            Delete = paste0("<button class='action-button btn-danger' 
+                          id='del_", uid, "' 
+                          onclick='get_id(this.id)'>
+                          <i class='fa-solid fa-trash'></i></button>")
+          )
+        
+        datatable(dat |> 
+                    select(Status,
+                           Task = title,
+                           Details = detail,
+                           Type = category,
+                           Delete),
+                  options = list(
+                    fixedColumns = TRUE,
+                    autoWidth = TRUE,
+                    ordering = TRUE,
+                    dom = 'Btsp'),
+                  editable = TRUE, 
+                  rownames = FALSE,
+                  escape = FALSE,
+                  selection = 'none',
+        )
+        
       })
-    })
-    
-    output$msg <- renderText({
-      paste0("pressed:", input$current_id)
+      
+      output$msg <- renderText({
+        paste0("Updated Status")
+      })
     })
     
   })
