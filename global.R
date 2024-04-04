@@ -24,6 +24,7 @@ shiny::onStop(function() {
 
 # Turn off scientific notation
 options(scipen = 999)
+options(shiny.reactlog=TRUE) 
 
 # Set spinner type (for loading)
 options(spinner.type = 8)
