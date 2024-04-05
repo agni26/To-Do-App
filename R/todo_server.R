@@ -1,49 +1,10 @@
-todo_ui <- function(id){
-  
-  fluidPage(
-    useShinyjs(),
-    titlePanel("To-Do App"),
-    
-    sidebarLayout(
-      sidebarPanel(
-        textInput(
-          NS(id, "title"), 
-          "TASK"
-        ),
-        
-        textAreaInput(
-          NS(id, "detail"), 
-          "DETAILS"
-        ),
-        
-        selectInput(
-          NS(id, "category"), 
-          "FREQUENCY", 
-          choices = c("Once", "Daily", "Weekly", "Monthly", "Yearly")
-        ),
-        
-        actionButton(
-          NS(id, "add"), 
-          label = "Add",
-          icon = shiny::icon("arrow-right"),
-          class = "btn-primary"
-        )
-      ),
-      
-      mainPanel( 
-        DTOutput(NS(id, "show")),
-        textOutput(NS(id, "msg"))
-      )
-    ),
-    
-    includeScript("www/get_ID.js")
-  )
-}
-
-
 todo_server <- function(id){
   
   moduleServer(id, function(input, output, session) {
+    
+    observeEvent(input$category, {
+      updateTabsetPanel(inputId = "params", selected = input$category)
+    }) 
     
     # Defining Reactive Values 
     tasks <- reactiveVal(con |> tbl("todo") |> collect())
@@ -60,17 +21,17 @@ todo_server <- function(id){
               status == FALSE ~ 
                 paste0(
                   "<div class = 'btn-group'>
-                    <button class='btn btn-success' id='stat_", uid, "' 
+                    <button class='btn btn-success btn-sm' id='stat_", uid, "' 
                       onclick='get_id(this.id)'>",icon("check"),"</button>
-                    <button class='btn btn-danger' id='del_", uid, "' 
+                    <button class='btn btn-danger btn-sm' id='del_", uid, "' 
                       onclick='get_id(this.id)'>",icon("trash"),"</button>"
                 ),
               status == TRUE ~ 
                 paste0(
                   "<div class = 'btn-group'>
-                    <button class='btn btn-warning' id='stat_", uid, "' 
+                    <button class='btn btn-warning btn-sm' id='stat_", uid, "' 
                       onclick='get_id(this.id)'>",icon("rotate"),"</button>
-                    <button class='btn btn-danger' id='del_", uid, "' 
+                    <button class='btn btn-danger btn-sm' id='del_", uid, "' 
                       onclick='get_id(this.id)'>",icon("trash"),"</button>")))
         
         datatable(dat |> 
@@ -81,6 +42,11 @@ todo_server <- function(id){
                   options = list(
                     fixedColumns = TRUE,
                     autoWidth = TRUE,
+                    scrollX = TRUE,
+                    columnDefs = list(list(width = '25%', targets = c(0)),
+                                      list(width = '60%', targets = c(1)),
+                                      list(width = '5%', targets = c(2)),
+                                      list(width = '8%', targets = c(3))),
                     dom = 'Btsp'),
                   editable = list(target = "cell", disable = list(columns = c(0, 2, 3))),
                   rownames = FALSE,
@@ -129,16 +95,7 @@ todo_server <- function(id){
       clmn <- input$show_cell_edit$col +2
       val  <- input$show_cell_edit$value
       
-      print(row)
-      print(clmn)
-      print(val)
-      
-      print(dat[row, clmn])
-      
       dat[row, clmn] <- val
-      
-      print(dat[row, clmn])
-      
       
       dbWriteTable(
         con,

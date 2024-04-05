@@ -6,6 +6,8 @@ library(duckdb)
 library(shinyjs)
 library(dplyr)
 library(dbplyr)
+library(bslib)
+library(shinycssloaders)
 
 db_config <- config::get()$db
 
