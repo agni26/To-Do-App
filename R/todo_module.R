@@ -2,7 +2,6 @@ todo_ui <- function(id){
   
   fluidPage(
     useShinyjs(),
-    
     titlePanel("To-Do App"),
     
     sidebarLayout(
@@ -46,68 +45,57 @@ todo_server <- function(id){
   
   moduleServer(id, function(input, output, session) {
     
-    # Render the initial table
+    # Defining Reactive Values 
+    tasks <- reactiveVal(con |> tbl("todo") |> collect())
+    alert <- reactiveVal("Connected")
+    
+    # Render Output Table
     output$show <- renderDT({
-      
-      dat <- con |> 
-        tbl("todo") |> 
-        collect()
+      dat <- tasks()
       
       if(nrow(dat)>0){
-        
         dat <- dat |> 
           mutate(
-            Status = case_when(status == FALSE ~ 
-                                 paste0("<button class='btn btn-success' 
-                                        id='stat_", uid, "' 
-                                        onclick='get_id(this.id)'> Done ",
-                                        icon("check"),"</button>"),
-                               status == TRUE ~ 
-                                 paste0("<button class='btn btn-outline-warning' 
-                                        id='stat_", uid, "' 
-                                        onclick='get_id(this.id)'> Redo",
-                                        icon("rotate"),"</button>")),
-            Delete = paste0("<button class='action-button btn-danger' 
-                          id='del_", uid, "' 
-                          onclick='get_id(this.id)'>
-                          <i class='fa-solid fa-trash'></i></button>")
-          )
+            button = case_when(
+              status == FALSE ~ 
+                paste0(
+                  "<div class = 'btn-group'>
+                    <button class='btn btn-success' id='stat_", uid, "' 
+                      onclick='get_id(this.id)'>",icon("check"),"</button>
+                    <button class='btn btn-danger' id='del_", uid, "' 
+                      onclick='get_id(this.id)'>",icon("trash"),"</button>"
+                ),
+              status == TRUE ~ 
+                paste0(
+                  "<div class = 'btn-group'>
+                    <button class='btn btn-warning' id='stat_", uid, "' 
+                      onclick='get_id(this.id)'>",icon("rotate"),"</button>
+                    <button class='btn btn-danger' id='del_", uid, "' 
+                      onclick='get_id(this.id)'>",icon("trash"),"</button>")))
         
         datatable(dat |> 
-                    select(Status,
-                           Task = title,
+                    select(Task = title,
                            Details = detail,
                            Type = category,
-                           Delete),
+                           Actions = button),
                   options = list(
                     fixedColumns = TRUE,
                     autoWidth = TRUE,
-                    ordering = TRUE,
                     dom = 'Btsp'),
-                  editable = TRUE, 
+                  editable = list(target = "cell", disable = list(columns = c(0, 2, 3))),
                   rownames = FALSE,
                   escape = FALSE,
                   selection = 'none')
-        
       }
+    })
+    
+    # Render Output Message
+    output$msg <- renderText({
+      alert()
     })
     
     # Function to update table with new row
     observeEvent(input$add, {
-      
-      # Insert new row into the database
-      # dbWriteTable(
-      #   con,
-      #   name = "todo",
-      #   value = data.frame(
-      #             uid = uuid::UUIDgenerate(TRUE),
-      #             title = input$title,
-      #             detail = input$detail,
-      #             category = input$category,
-      #             status = FALSE),
-      #   overwrite = FALSE,
-      #   append = TRUE
-      # )
       
       dbExecute(con,
                 "INSERT INTO todo VALUES (?, ?, ?, ?, ?)",
@@ -122,51 +110,13 @@ todo_server <- function(id){
       reset("detail")
       reset("category")
       
-      output$msg <- renderText({
-        paste0("Added record")
-      })
+      alert("Added Task")
       
       # Update the table data
-      output$show <- renderDT({
-        dat <- con |> 
-          tbl("todo") |> 
-          collect()
-        
-        dat <- dat |> 
-          mutate(
-            Status = case_when(status == FALSE ~ 
-                                 paste0("<button class='btn btn-success' 
-                                        id='stat_", uid, "' 
-                                        onclick='get_id(this.id)'> Done ",
-                                        icon("check"),"</button>"),
-                               status == TRUE ~ 
-                                 paste0("<button class='btn btn-outline-warning' 
-                                        id='stat_", uid, "' 
-                                        onclick='get_id(this.id)'> Redo",
-                                        icon("rotate"),"</button>")),
-            Delete = paste0("<button class='action-button btn-danger' 
-                          id='del_", uid, "' 
-                          onclick='get_id(this.id)'>
-                          <i class='fa-solid fa-trash'></i></button>")
-          )
-        
-        datatable(dat |> 
-                    select(Status,
-                           Task = title,
-                           Details = detail,
-                           Type = category,
-                           Delete),
-                  options = list(
-                    fixedColumns = TRUE,
-                    autoWidth = TRUE,
-                    ordering = TRUE,
-                    dom = 'Btsp'),
-                  editable = TRUE, 
-                  rownames = FALSE,
-                  escape = FALSE,
-                  selection = 'none')
-        
-      })
+      tasks(con |> 
+              tbl("todo") |> 
+              collect())
+      
     })
     
     observeEvent(input$show_cell_edit, {
@@ -176,10 +126,19 @@ todo_server <- function(id){
         collect()
       
       row  <- input$show_cell_edit$row
-      clmn <- input$show_cell_edit$col + 1
+      clmn <- input$show_cell_edit$col +2
       val  <- input$show_cell_edit$value
       
+      print(row)
+      print(clmn)
+      print(val)
+      
+      print(dat[row, clmn])
+      
       dat[row, clmn] <- val
+      
+      print(dat[row, clmn])
+      
       
       dbWriteTable(
         con,
@@ -189,52 +148,11 @@ todo_server <- function(id){
         append = FALSE
       )
       
-      output$msg <- renderText({
-        paste0("Updated record")
-      })
+      alert("Updated record")
       
-      output$show <- renderDT({
-        
-        dat <- con |> 
-          tbl("todo") |> 
-          collect()
-        
-        dat <- dat |> 
-          mutate(
-            Status = case_when(status == FALSE ~ 
-                                 paste0("<button class='btn btn-success' 
-                                        id='stat_", uid, "' 
-                                        onclick='get_id(this.id)'> Done ",
-                                        icon("check"),"</button>"),
-                               status == TRUE ~ 
-                                 paste0("<button class='btn btn-outline-warning' 
-                                        id='stat_", uid, "' 
-                                        onclick='get_id(this.id)'> Redo",
-                                        icon("rotate"),"</button>")),
-            Delete = paste0("<button class='action-button btn-danger' 
-                          id='del_", uid, "' 
-                          onclick='get_id(this.id)'>
-                          <i class='fa-solid fa-trash'></i></button>")
-          )
-        
-        datatable(dat |> 
-                    select(Status,
-                           Task = title,
-                           Details = detail,
-                           Type = category,
-                           Delete),
-                  options = list(
-                    fixedColumns = TRUE,
-                    autoWidth = TRUE,
-                    ordering = TRUE,
-                    dom = 'Btsp'),
-                  editable = TRUE, 
-                  rownames = FALSE,
-                  escape = FALSE,
-                  selection = 'none',
-        )
-        
-      })
+      tasks(con |> 
+              tbl("todo") |> 
+              collect())
     })
     
     observeEvent(input$current_id, {
@@ -242,7 +160,7 @@ todo_server <- function(id){
       id <- unlist(strsplit(input$current_id, "_"))
       id2 <- id[2]
       
-      original_status <- as.logical(
+      new_status <- !as.logical(
         con |> 
           tbl("todo") |> 
           filter(uid == id2) |>
@@ -250,73 +168,27 @@ todo_server <- function(id){
           collect()
       )
       
-      new_status = !original_status
-      
       if(id[1] == "stat"){
-        
         dbExecute(con,
                   "UPDATE todo SET status = ? WHERE uid = ?",
                   list(
-                    !original_status,
-                    id2
-                  ))
+                    new_status,
+                    id2))
+        
+        alert("Updated Status")
       }
       
       if(id[1] == "del"){
-        
         dbExecute(con,
                   "DELETE FROM todo WHERE uid = ?",
-                  id2
-                  )
+                  id2)
+        
+        alert("Deleted Task")
       }
       
-      output$show <- renderDT({
-        
-        dat <- con |> 
-          tbl("todo") |> 
-          collect()
-        
-        dat <- dat |> 
-          mutate(
-            Status = case_when(status == FALSE ~ 
-                                 paste0("<button class='btn btn-success' 
-                                        id='stat_", uid, "' 
-                                        onclick='get_id(this.id)'> Done ",
-                                        icon("check"),"</button>"),
-                               status == TRUE ~ 
-                                 paste0("<button class='btn btn-outline-warning' 
-                                        id='stat_", uid, "' 
-                                        onclick='get_id(this.id)'> Redo",
-                                        icon("rotate"),"</button>")),
-            Delete = paste0("<button class='action-button btn-danger' 
-                          id='del_", uid, "' 
-                          onclick='get_id(this.id)'>
-                          <i class='fa-solid fa-trash'></i></button>")
-          )
-        
-        datatable(dat |> 
-                    select(Status,
-                           Task = title,
-                           Details = detail,
-                           Type = category,
-                           Delete),
-                  options = list(
-                    fixedColumns = TRUE,
-                    autoWidth = TRUE,
-                    ordering = TRUE,
-                    dom = 'Btsp'),
-                  editable = TRUE, 
-                  rownames = FALSE,
-                  escape = FALSE,
-                  selection = 'none',
-        )
-        
-      })
-      
-      output$msg <- renderText({
-        paste0("Updated Status")
-      })
+      tasks(con |> 
+              tbl("todo") |> 
+              collect())
     })
-    
   })
 }
