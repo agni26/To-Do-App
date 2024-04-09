@@ -26,8 +26,11 @@ todo_ui <- function(id){
         choices = c("Once", "Daily", "Weekly", "Monthly", "Yearly")
       ),
       
+      timeInput(inputId = NS(id, "time"), label = "Time", value = Sys.time(), seconds = FALSE),
+      
+      
       tabsetPanel(
-        id = NS(id,"params"),
+        id = NS(id,"params_date"),
         type = "hidden",
         
         tabPanel("Once", dateInput(NS(id, "date"), "DATE")),
@@ -51,23 +54,23 @@ todo_ui <- function(id){
         class = "btn-primary"
       )
     ),
+    
     navset_bar(
       title = "Tasks",
       nav_spacer(),
       
       nav_panel(
-        title = "Upcoming",
+        title = "Current",
         icon = icon("house"),
         
         withSpinner(DTOutput(NS(id, "show"))),
-        textOutput(NS(id, "msg"))
       ),
       
       nav_panel(
-        title = "Pending",
+        title = "Upcoming",
         icon = icon("list"),
         
-        "hi hi"
+        "bye bye"
       ),
       
       nav_panel(

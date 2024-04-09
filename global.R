@@ -8,6 +8,7 @@ library(dplyr)
 library(dbplyr)
 library(bslib)
 library(shinycssloaders)
+library(shinyTime)
 
 db_config <- config::get()$db
 
@@ -30,3 +31,5 @@ options(shiny.reactlog=TRUE)
 
 # Set spinner type (for loading)
 options(spinner.type = 8)
+
+week <- as.factor(c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))

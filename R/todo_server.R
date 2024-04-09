@@ -1,14 +1,15 @@
-todo_server <- function(id){
+todo_server <- function(id) {
   
   moduleServer(id, function(input, output, session) {
     
+    # Controlling conditional ui parameters - Date
     observeEvent(input$category, {
-      updateTabsetPanel(inputId = "params", selected = input$category)
+      updateTabsetPanel(inputId = "params_date", selected = input$category)
     }) 
     
     # Defining Reactive Values 
-    tasks <- reactiveVal(con |> tbl("todo") |> collect())
-    alert <- reactiveVal("Connected")
+    tasks <- reactiveVal(dat)
+    alert <- reactiveVal(NULL)
     
     # Render Output Table
     output$show <- renderDT({
@@ -22,7 +23,7 @@ todo_server <- function(id){
                 paste0(
                   "<div class = 'btn-group'>
                     <button class='btn btn-success btn-sm' id='stat_", uid, "' 
-                      onclick='get_id(this.id)'>",icon("check"),"</button>
+                      onclick='get_id(this.id)'>", icon("check"),"</button>
                     <button class='btn btn-danger btn-sm' id='del_", uid, "' 
                       onclick='get_id(this.id)'>",icon("trash"),"</button>"
                 ),
@@ -55,22 +56,39 @@ todo_server <- function(id){
       }
     })
     
-    # Render Output Message
-    output$msg <- renderText({
-      alert()
+    # Render Output Notification
+    reactive({
+      showNotification(alert(), closeButton = TRUE)
     })
     
     # Function to update table with new row
     observeEvent(input$add, {
       
+      st_date = input$date
+      wk_day = input$day
+      nxt_date = NULL
+      
+      
+      
+      if(input$category == "Daily"){
+        nxt_date = Sys.Date() + 1
+      }
+      if(input$category == "Weekly"){
+        if(week == weekdays(Sys.Date()))
+        nxt_date = Sys.Date()
+      }
+      
+      
+      
       dbExecute(con,
-                "INSERT INTO todo VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO todo VALUES (?, ?, ?, ?, ?, ?, ?, ?, ? ,?)",
                 list(
                   uuid::UUIDgenerate(TRUE),
                   input$title,
                   input$detail,
                   input$category,
-                  FALSE))
+                  FALSE,
+                  ))
       
       reset("title")
       reset("detail")

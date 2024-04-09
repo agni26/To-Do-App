@@ -12,27 +12,23 @@ create_query = "CREATE TABLE todo (
   detail                          VARCHAR,
   category                        VARCHAR,
   status                          BOOLEAN,
+  start_date                      DATETIME,
+  days_of_week                    INTEGER[],
+  next_date                       DATETIME,
+  created_on                      DATETIME,
+  modified_on                     DATETIME
 )"
 
 # Execute the query created above
 dbExecute(con, create_query)
 
-# Execute to delete all entries
-# dbExecute(con, "DELETE From todo")
+as_datetime(today())
 
-# retrieve the items again
-dat <- dbGetQuery(con, "SELECT * FROM todo")
-
-DBI::dbWriteTable(
-  con,
-  name = "todo",
-  value = dat,
-  overwrite = FALSE,
-  append = TRUE
-)
+# Check table structure
+dbGetQuery(con, "SELECT * FROM todo")
 
 # List tables to confirm 'todo' table exists
 dbListTables(con)
 
-# disconnect from duckdb before continuing
+# Disconnect from DB
 dbDisconnect(con, shutdown=TRUE)
