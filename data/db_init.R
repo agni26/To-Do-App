@@ -13,11 +13,13 @@ create_query = "CREATE TABLE todo (
   category                        VARCHAR,
   status                          BOOLEAN,
   start_date                      DATETIME,
-  days_of_week                    INTEGER[],
   next_date                       DATETIME,
   created_on                      DATETIME,
   modified_on                     DATETIME
 )"
+
+#days_of_week                    VARCHAR,
+
 
 # Execute the query created above
 dbExecute(con, create_query)

@@ -26,7 +26,7 @@ todo_ui <- function(id){
         choices = c("Once", "Daily", "Weekly", "Monthly", "Yearly")
       ),
       
-      timeInput(inputId = NS(id, "time"), label = "Time", value = Sys.time(), seconds = FALSE),
+      #timeInput(inputId = NS(id, "time"), label = "Time", value = Sys.time(), seconds = FALSE),
       
       
       tabsetPanel(

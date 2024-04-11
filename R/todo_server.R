@@ -10,6 +10,21 @@ todo_server <- function(id) {
     # Defining Reactive Values 
     tasks <- reactiveVal(dat)
     alert <- reactiveVal(NULL)
+    curr_date <- reactiveVal(Sys.Date())
+    
+    reactive({
+      uids <- dat |> 
+        filter(next_date < curr_date()) |> 
+        mutate(next_date = case_when(
+          
+        ))
+      
+      for (id in uids) {
+        x <- dat |> 
+          filter(uid == id)
+      }
+      
+    })
     
     # Render Output Table
     output$show <- renderDT({
@@ -36,20 +51,21 @@ todo_server <- function(id) {
                       onclick='get_id(this.id)'>",icon("trash"),"</button>")))
         
         datatable(dat |> 
+                    mutate(Day = weekdays(next_date)) |> 
                     select(Task = title,
                            Details = detail,
                            Type = category,
+                           `Due on` = next_date,
+                           Day,
                            Actions = button),
                   options = list(
                     fixedColumns = TRUE,
                     autoWidth = TRUE,
                     scrollX = TRUE,
                     columnDefs = list(list(width = '25%', targets = c(0)),
-                                      list(width = '60%', targets = c(1)),
-                                      list(width = '5%', targets = c(2)),
-                                      list(width = '8%', targets = c(3))),
+                                      list(width = '50%', targets = c(1))),
                     dom = 'Btsp'),
-                  editable = list(target = "cell", disable = list(columns = c(0, 2, 3))),
+                  editable = list(target = "cell", disable = list(columns = c(0, 2, 3, 4, 5))),
                   rownames = FALSE,
                   escape = FALSE,
                   selection = 'none')
@@ -64,35 +80,39 @@ todo_server <- function(id) {
     # Function to update table with new row
     observeEvent(input$add, {
       
-      st_date = input$date
-      wk_day = input$day
-      nxt_date = NULL
+      nxt_date = input$date
       
-      
-      
-      if(input$category == "Daily"){
-        nxt_date = Sys.Date() + 1
+      if(input$date < today()){
+        
+        if (input$category == "Daily") {
+          nxt_date = today()
+        }
+        else if (input$category == "Monthly") {
+          nxt_date = input$date + months(1)
+        }
+        else if (input$category == "Yearly") {
+          nxt_date = input$date + years(1)
+        }
       }
-      if(input$category == "Weekly"){
-        if(week == weekdays(Sys.Date()))
-        nxt_date = Sys.Date()
-      }
-      
-      
       
       dbExecute(con,
-                "INSERT INTO todo VALUES (?, ?, ?, ?, ?, ?, ?, ?, ? ,?)",
+                "INSERT INTO todo VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 list(
                   uuid::UUIDgenerate(TRUE),
                   input$title,
                   input$detail,
                   input$category,
                   FALSE,
-                  ))
+                  input$date,
+                  nxt_date,
+                  Sys.time(),
+                  Sys.time())
+                )
       
       reset("title")
       reset("detail")
       reset("category")
+      reset("date")
       
       alert("Added Task")
       
